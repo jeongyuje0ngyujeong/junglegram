@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>프로필 페이지</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+        <!-- Bluma CSS library -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+        <!-- Icon font library -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <!-- CSS -->
+        <link rel="stylesheet" href="styles.css" />
+
+        <style>
+            .card {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            .favorite-color-gradient {
+                background: linear-gradient(to left, #48aaeb, #ffffff);
+                margin-top: 1rem;
+                border-radius: 4px;
+            }
+
+            .card-footer-item {
+                color: #3273dc;
+            }
+
+            .logout-button {
+                color: #ff3860;
+                transition: all 0.3s ease;
+            }
+
+            .logout-button:hover {
+                background-color: #ff3860;
+                color: white;
+            }
+            .profile-settings {
+                color: #3273dc;
+                transition: all 0.3s ease;
+            }
+
+            .profile-settings:hover {
+                background-color: #3273dc;
+                color: white;
+            }
+
+            .fixed-buttons {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 100;
+            }
+            .icon.is-large i {
+                font-size: 2.5rem;
+            }
+            .cardsize {
+                width: 250px;
+                height: 150px;
+                margin: auto;
+            }
+        </style>
+    </head>
+    <body>
+        <section class="section">
+            <div class="container">
+                <div class="card">
+                    <div class="card-content">
+                        <div class="favorite-color-gradient" style="width: 900px; margin: auto; padding: 20px">
+                            <div class="media">
+                                <div class="media-left">
+                                    <figure class="image is-128x128">
+                                        <img src="http://ymphotostudio.com/wp-content/uploads/2021/04/%EC%A6%9D%EB%AA%85-24-500x601.jpg" alt="프로필 사진" class="is-rounded" />
+                                    </figure>
+                                </div>
+                                <div class="media-content">
+                                    <p class="title is-4">이름</p>
+                                    <div class="content">
+                                        <p><strong>생년월일:</strong> YYYY-MM-DD</p>
+                                        <p><strong>MBTI:</strong> XXXX</p>
+                                        <p><strong>취미:</strong> 취미1, 취미2, 취미3</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="favorite-color-gradient"></div>
+                        <div class="content mt-4">
+                            <h4 class="title is-5">자기소개</h4>
+                            <p>여기에 자기소개 내용을 입력하세요.</p>
+                        </div>
+                    </div>
+                    <footer class="card-footer">
+                        <a href="#" class="card-footer-item profile-settings">프로필 설정</a>
+                        <a href="#" class="card-footer-item logout-button">로그아웃</a>
+                    </footer>
+                </div>
+            </div>
+
+            <!-- 홈버튼 -->
+            <span class="icon is-large fixed-buttons">
+                <i class="fas fa-home"></i>
+            </span>
+        </section>
+    </body>
+</html>
