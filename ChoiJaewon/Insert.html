@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>나를 소개해주세요!</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <style type="text/css">
+      .wrap {
+        width: 500px;
+        margin: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="section">
+        <div class="container">
+          <h1 class="title is-3">나를 소개해주세요!</h1>
+          <div class="box">
+            <div class="field">
+              <label class="label" for="name">이름</label>
+              <div class="control">
+                <input class="input" type="text" id="name">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="birth">생일</label>
+              <div class="control">
+                <input class="input" type="date" id="birth">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="mbti">MBTI</label>
+              <div class="control">
+                <input class="input" type="text" id="mbti">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="pic">사진</label>
+              <div class="control">
+                <input class="input" type="file" id="pic">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="color">좋아하는 색</label>
+              <div class="control">
+                <input class="input" type="color" id="color">
+              </div>
+            </div>
+            
+            <div class="field">
+              <label class="label" for="selfcomment">자기소개</label>
+              <div class="control">
+                <textarea class="textarea" id="selfcomment" rows="3"></textarea>
+              </div>
+            </div>
+            <div class="field">
+              <div class="control">
+                <button class="button is-primary">입력하기</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
