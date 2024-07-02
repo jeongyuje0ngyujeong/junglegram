@@ -113,7 +113,7 @@
 
           <!-- 회원가입버튼 -->
           <p>
-            <button onclick="" type="button">회원가입</button>
+            <button onclick="openRegister()" type="button">회원가입</button>
           </p>
         </div>
 
