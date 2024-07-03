@@ -5,14 +5,15 @@ from flask_bcrypt import Bcrypt, check_password_hash
 from bson import ObjectId
 from flask.json.provider import JSONProvider
 from functools import wraps
-#from datetime import datetime, timedelta
-
-app = Flask(__name__)
-
 import certifi
 import json
 import jwt
 import time
+#from datetime import datetime, timedelta
+
+app = Flask(__name__)
+
+
 
 ca = certifi.where()
 
@@ -33,7 +34,6 @@ class CustomJSONEncoder(json.JSONEncoder):
             return str(o)
         return json.JSONEncoder.default(self, o)
 
-
 class CustomJSONProvider(JSONProvider):
     def dumps(self, obj, **kwargs):
         return json.dumps(obj, **kwargs, cls=CustomJSONEncoder)
@@ -48,57 +48,67 @@ app.json = CustomJSONProvider(app)
 # 여기까지 이해 못해도 그냥 넘어갈 코드입니다.
 # #####################################################################################
 
-## HTML을 주는 부분
-def jwt_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        access_token = request.headers.get('Authorization')
-        print(0)
-        if not access_token:
-            print(1)
-            return redirect('/login')
-        try:
-            print(2)
-            jwt.decode(access_token.split()[1], app.config['SECRET_KEY'], algorithms=['HS256'])
-        except jwt.ExpiredSignatureError:
-            print(3)
-            response = make_response(jsonify({'message': 'Token is missing!'}))
-            response.headers['Location'] = url_for('login_page')
-            return response
-        except jwt.InvalidTokenError:
-            print(4)
-            response = make_response(jsonify({'message': '옳지 않은 토큰입니다.'}))
-            response.headers['Location'] = url_for('login_page')
-            return response
-        print(6)
-        return f(*args, **kwargs)
-    return decorated_function
 
-# 들어가자마자 일단 토큰여부 확인하고 바로 main 페이지로 이동
 @app.route('/')
-@jwt_required
-def home():
-    
-    print(9)
-    return render_template('main.html')
-
-# login 하는 페이지로 이동
-@app.route('/login')
-def login_page():
+def login():
     return render_template('login.html')
 
 
-@app.route('/check_token', methods=['GET'])
-@jwt_required
-def check_token():
-    return jsonify({'result': 'success'})
+@app.route('/main', methods=['POST'])
+def main():
+    access_token = request.form['access-token']
+    print(access_token)
+    id = jwt.decode(access_token, app.config['SECRET_KEY'], algorithms=['HS256'])['_id']
+    print(id)
+    temp = list(db.users.find())
+    users = []
+    for i in range(len(temp)):
+        if str(temp[i]['_id']) != id:
+            users.append(temp[i])
+            
+    return render_template('main.html', users=users)
 
 @app.route('/user', methods=['POST'])
-def show_user():
-    id = request.form['id']
-    user = db.users.find_one({'_id': ObjectId(id)})
-    return render_template('user_page.html/', user=user)
-    
+def user_page():
+    id = request.form["id"]
+    user = db.users.find_one({"_id":ObjectId(id)})
+    return render_template('user_page.html', user=user)
+
+@app.route('/mypage', methods=['POST'])
+def my_page():
+    access_token = request.form['access-token']
+    id = jwt.decode(access_token, app.config['SECRET_KEY'], algorithms=['HS256'])['_id']
+    user = db.users.find_one({"_id":ObjectId(id)})
+    return render_template('my_page.html', user=user)
+
+@app.route('/user/register', methods=['POST']) 
+def register() : 
+    id_receive = request.form['id_give']
+    pw_receive = request.form['pw_give']
+    pw_hash = bcrypt.generate_password_hash(pw_receive).decode('utf-8')
+    if db.accounts.count_documents({'id': id_receive}) == 0:
+        db.accounts.insert_one({'id': id_receive, 'password': pw_hash})
+        _id = db.accounts.find_one({'id': id_receive})['_id']
+        return jsonify({'result': 'success', 'message': 'register success', '_id': _id})
+    else:
+        return jsonify({'result': 'failure', 'message': 'id already exists'})
+
+#댓글 가져와서 디비에 저장    
+@app.route('/user_comment', methods=['POST'])
+def post_comment():
+        result = request.form
+        user_id = result['user_id']
+        access_token = result['commenter_id']
+        commenter_id = jwt.decode(access_token, app.config['SECRET_KEY'], algorithms=['HS256'])['_id']
+        comment = result['comment']
+        doc = {
+            'user_id': user_id,
+            'commenter_id': commenter_id,
+            'comment': comment,
+        }
+        db.comments.insert_one(doc)
+        return jsonify({'result': 'success'})
+
 
 @app.route('/users/insert', methods=['POST'])
 def insert():
@@ -122,59 +132,23 @@ def insert():
     db.users.insert_one(doc)
     return jsonify({'result': 'success'})
 
-@app.route('/edit', methods=['POST'])
-def edit():
-    result = request.form
-    id= result['id']
-    name = result['name']
-    age = result['age']
-    mbti = result['mbti']
-    hobby = result['hobby']
-    rgb = result['rgb']
-    content = result['content']
-    
-    db.users.update_one({'_id': ObjectId(id)}, {'$set': {'name': name, 'age': age, 'mbti': mbti, 'hobby': hobby, 'rgb': rgb, 'content': content}})
-    return jsonify({'result': 'success'})
-
-# route: /users -> /user
-@app.route('/user/register', methods=['POST']) 
-def register() : 
-    id_receive = request.form['id_give']
-    pw_receive = request.form['pw_give']
-    pw_hash = bcrypt.generate_password_hash(pw_receive).decode('utf-8')
-    if db.accounts.count_documents({'id': id_receive}) == 0:
-        db.accounts.insert_one({'id': id_receive, 'password': pw_hash})
-        _id = db.accounts.find_one({'id': id_receive})['_id']
-        return jsonify({'result': 'success', 'message': 'register success', '_id': _id})
-    else:
-        return jsonify({'result': 'failure', 'message': 'id already exists'})
-    
-# route: /users -> /user
-@app.route('/user/check_id', methods=['GET']) 
-def check_id() : 
-    id_receive = request.args.get('id_give')
-
-    if db.accounts.count_documents({'id': id_receive}) == 0:
-        return jsonify({'result': 'success', 'message': 'usable id'})
-    else:
-        return jsonify({'result': 'failure', 'message': 'id already exists'})
-
-# route: /users -> /user
 @app.route('/user/login', methods=['POST']) 
-def login() : 
+def user_login() : 
+    
     id = request.form['id']
     pw = request.form['pw']
     account = db.accounts.find_one({'id': id})
-   
+    id = account['_id']
+    id = str(id)
+
     if account:
         if check_password_hash(account['password'], pw):
             payload = {
-                'id': id,
+                '_id': id,
                 #'pw' : account['password'],
                 #만료기한 24시간
                 'exp': time.time() + 86400
             }
-            
             token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
         
             #token 변수명 변경: token > access-token
@@ -184,6 +158,24 @@ def login() :
             return jsonify({'result': 'failure', 'message': 'pw doesnt exists'})
     else :
         return jsonify({'result': 'failure', 'message': 'id doesnt exists'})
+
+
+
+@app.route('/user/check_id', methods=['GET']) 
+def check_id() : 
+    id_receive = request.args.get('id_give')
+
+    if db.accounts.count_documents({'id': id_receive}) == 0:
+        return jsonify({'result': 'success', 'message': 'usable id'})
+    else:
+        return jsonify({'result': 'failure', 'message': 'id already exists'})
+
+@app.route('/check_token', methods=['GET'])
+def check_token():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return redirect('/login')
+    return jsonify({'result': 'success'}) 
 
 
 
