@@ -23,29 +23,6 @@
                 border-radius: 4px;
             }
 
-            .card-footer-item {
-                color: #3273dc;
-            }
-
-            .logout-button {
-                color: #ff3860;
-                transition: all 0.3s ease;
-            }
-
-            .logout-button:hover {
-                background-color: #ff3860;
-                color: white;
-            }
-            .profile-settings {
-                color: #3273dc;
-                transition: all 0.3s ease;
-            }
-
-            .profile-settings:hover {
-                background-color: #3273dc;
-                color: white;
-            }
-
             .fixed-buttons {
                 position: fixed;
                 top: 20px;
@@ -60,6 +37,7 @@
                 height: 150px;
                 margin: auto;
             }
+
             .home-button {
                 color: #000000;
                 cursor: pointer;
@@ -67,25 +45,10 @@
 
                 font-size: 2.5rem;
             }
-            .wrap {
-                width: 500px;
-                margin: auto;
-            }
 
-            .titlegram {
-                width: 500px;
-                height: 200px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-
-            #register-box {
-                width: 800px;
-                margin: auto;
-                padding: 5px;
-
-                border-radius: 5px;
+            .home-button:hover {
+                transform: scale(1.1);
+                color: #727272;
             }
         </style>
 
@@ -136,6 +99,33 @@
                             alert('ID 없다');
                         }
                         myPageSubmit();
+                    },
+                    error: function () {
+                        alert('서버 오류!');
+                    },
+                });
+            }
+
+            function comment_submit() {
+                const comment = $('#comment_text').val();
+                const user_id = $('#user_id_hidden').val();
+                const token = sessionStorage.getItem('access-token');
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/user/comment',
+                    data: {
+                        user_id: user_id,
+                        comment: comment,
+                        token: token,
+                    },
+                    success: function (response) {
+                        if (response.result === 'success') {
+                            alert('회원가입이 완료되었습니다.');
+                            myPageSubmit();
+                        } else {
+                            alert('ID 중복 미확인');
+                        }
                     },
                     error: function () {
                         alert('서버 오류!');
@@ -253,6 +243,60 @@
             </section>
         </div>
 
+        <section class="section">
+            <div class="container">
+                <div class="card">
+                    <div class="card-content">
+                        <!-- 기존 댓글 목록 -->
+                        {% for comment in comments %}
+                        <article class="media">
+                            <figure class="media-left">
+                                <p class="image is-48x48">
+                                    <img src="{{comment['pic']}}" alt="댓글 작성자 아바타" />
+                                </p>
+                            </figure>
+                            <div class="media-content">
+                                <div class="content">
+                                    <p>
+                                        <strong>{{comment['name']}}</strong>
+                                        <br />
+                                        {{comment['comment']}}
+                                        <br />
+                                        <small></small>
+                                    </p>
+                                </div>
+                            </div>
+                        </article>
+                        {% endfor %}
+
+                        <!-- 댓글 작성 폼 -->
+                        <article class="media">
+                            <figure class="media-left">
+                                <p class="image is-64x64">
+                                    <img src="{{user['image_path']}}" alt="사용자 아바타" />
+                                </p>
+                            </figure>
+                            <div class="media-content">
+                                <div class="field">
+                                    <p class="control">
+                                        <textarea id="comment_text" class="textarea" placeholder="댓글을 작성하세요..."></textarea>
+                                    </p>
+                                </div>
+                                <nav class="level">
+                                    <div class="level-left">
+                                        <div class="level-item">
+                                            <a onclick="comment_submit()" class="button is-info">댓글 작성</a>
+                                        </div>
+                                    </div>
+                                </nav>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <input type="hidden" id="user_id_hidden" value="{{user['_id']}}" />
         <form id="toMain" action="main" method="POST" style="display: none">
             <input type="hidden" name="access-token" id="formHidden" />
         </form>
