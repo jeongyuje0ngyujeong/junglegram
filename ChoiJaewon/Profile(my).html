@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>프로필 페이지</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
@@ -18,17 +19,15 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <!-- CSS -->
-    <link rel="stylesheet" href="styles.css" />
 
     <style>
       .card {
-        max-width: 1200px;
+        max-width: 1000px;
         margin: 0 auto;
       }
 
       .favorite-color-gradient {
-        background: linear-gradient(to left, #48aaeb, #ffffff);
+        background: linear-gradient(to left, {{user[ "color"]}}, #ffffff);
         margin-top: 1rem;
         border-radius: 4px;
       }
@@ -70,11 +69,76 @@
         height: 150px;
         margin: auto;
       }
+      .home-button {
+        color: #000000;
+        cursor: pointer;
+        transition: transform 0.3s ease, color 0.3s ease;
+
+        font-size: 2.5rem;
+      }
     </style>
+
+    <script>
+      $(document).ready(function () {
+        $("#name").val("{{user['name']}}");
+        $("#age").val("{{user['age']}}");
+        $("#mbti").val("{{user['mbti']}}");
+        $("#hobby").val("{{user['hobby']}}");
+        $("#content").val("{{user['content']}}");
+        $("#color").val("{{user['color']}}");
+      });
+
+      function editMode() {
+        $("#info-section").hide();
+        $("#edit-section").show();
+      }
+
+      function edit() {
+        let id = "developerben01";
+        let name = $("#name").val();
+        let age = $("#age").val();
+        let mbti = $("#mbti").val();
+        let hobby = $("#hobby").val();
+        let content = $("#content").val();
+        let color = $("#color").val();
+        console.log(name, age, mbti, hobby, content, color);
+        $.ajax({
+          type: "POST",
+          url: "/users/edit",
+          data: {
+            _id: id,
+            name: name,
+            age: age,
+            mbti: mbti,
+            hobby: hobby,
+            content: content,
+            color: color,
+          },
+          success: function (response) {
+            if (response.result === "success") {
+              alert(response.message);
+            } else {
+              alert("ID 없다");
+            }
+          },
+          error: function () {
+            alert("서버 오류!");
+          },
+        });
+      }
+
+      function mainSubmit() {
+        const token = sessionStorage.getItem("access-token");
+        const myForm = $("#toMain");
+        const hidden = $("#formHidden").val(token);
+
+        myForm.submit();
+      }
+    </script>
   </head>
   <body>
-    <section class="section">
-      <div class="container">
+    <section class="section" id="info-section">
+      <div class="container" style="margin-top: 50px; margin-bottom: -60px">
         <div class="card">
           <div class="card-content">
             <div
@@ -92,11 +156,11 @@
                   </figure>
                 </div>
                 <div class="media-content">
-                  <p class="title is-4">이름</p>
+                  <p class="title is-4">{{user['name']}}</p>
                   <div class="content">
-                    <p><strong>생년월일:</strong> YYYY-MM-DD</p>
-                    <p><strong>MBTI:</strong> XXXX</p>
-                    <p><strong>취미:</strong> 취미1, 취미2, 취미3</p>
+                    <p><strong>생년월일:</strong> {{user['age']}}</p>
+                    <p><strong>MBTI:</strong> {{user['mbti']}}</p>
+                    <p><strong>취미:</strong> {{user['hobby']}}</p>
                   </div>
                 </div>
               </div>
@@ -104,20 +168,157 @@
             <div class="favorite-color-gradient"></div>
             <div class="content mt-4">
               <h4 class="title is-5">자기소개</h4>
-              <p>여기에 자기소개 내용을 입력하세요.</p>
+              <p>{{user['content']}}</p>
             </div>
           </div>
           <footer class="card-footer">
-            <a href="#" class="card-footer-item profile-settings">프로필 설정</a>
+            <a
+              onclick="editMode()"
+              href="#"
+              class="card-footer-item profile-settings"
+              >프로필 설정</a
+            >
             <a href="#" class="card-footer-item logout-button">로그아웃</a>
           </footer>
         </div>
       </div>
 
       <!-- 홈버튼 -->
-      <span class="icon is-large fixed-buttons">
+
+      <a
+        onclick="mainSubmit()"
+        href="#"
+        class="icon is-large fixed-buttons home-button"
+      >
         <i class="fas fa-home"></i>
-      </span>
+      </a>
     </section>
+
+    <div class="wrap" id="edit-section" style="display: none">
+      <section class="section">
+        <div class="container">
+          <h1 class="title is-3">나를 소개해주세요!</h1>
+          <div class="box">
+            <div class="field">
+              <label class="label" for="name">이름</label>
+              <div class="control">
+                <input class="input" type="text" id="name" />
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="birth">생일</label>
+              <div class="control">
+                <input class="input" type="date" id="birth" />
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="mbti">MBTI</label>
+              <div class="control">
+                <input class="input" type="text" id="mbti" />
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="hobby">취미</label>
+              <div class="control">
+                <input class="input" type="text" id="hobby" />
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="pic">사진</label>
+              <div class="control">
+                <input class="input" type="file" id="pic" />
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="color">좋아하는 색</label>
+              <div class="control">
+                <input class="input" type="color" id="color" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label" for="selfcomment">자기소개</label>
+              <div class="control">
+                <textarea class="textarea" id="selfcomment" rows="3"></textarea>
+              </div>
+            </div>
+            <div class="field">
+              <div class="control">
+                <button
+                  onclick="edit()"
+                  id="insert_button"
+                  class="button is-primary"
+                >
+                  입력하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <section class="section">
+      <div class="container">
+        <div class="card">
+          <div class="card-content">
+            <!-- 기존 댓글 목록 -->
+            <article class="media">
+              <figure class="media-left">
+                <p class="image is-48x48">
+                  <img
+                    src="https://bulma.io/images/placeholders/96x96.png"
+                    alt="댓글 작성자 아바타"
+                  />
+                </p>
+              </figure>
+              <div class="media-content">
+                <div class="content">
+                  <p>
+                    <strong>김철수</strong>
+                    <br />
+                    MBTI가 저와 같네요! 반갑습니다.
+                    <br />
+                    <small></small>
+                  </p>
+                </div>
+              </div>
+            </article>
+
+            <!-- 댓글 작성 폼 -->
+            <article class="media">
+              <figure class="media-left">
+                <p class="image is-64x64">
+                  <img
+                    src="https://bulma.io/images/placeholders/128x128.png"
+                    alt="사용자 아바타"
+                  />
+                </p>
+              </figure>
+              <div class="media-content">
+                <div class="field">
+                  <p class="control">
+                    <textarea
+                      class="textarea"
+                      placeholder="댓글을 작성하세요..."
+                    ></textarea>
+                  </p>
+                </div>
+                <nav class="level">
+                  <div class="level-left">
+                    <div class="level-item">
+                      <a class="button is-info">댓글 작성</a>
+                    </div>
+                  </div>
+                </nav>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <form id="toMain" action="main" method="POST" style="display: none">
+      <input type="hidden" name="access-token" id="formHidden" />
+    </form>
   </body>
 </html>
