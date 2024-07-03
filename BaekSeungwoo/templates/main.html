@@ -124,6 +124,7 @@
             {% for user in users %}
             <form class="card" id="{{user['_id']}}" action="user" method="POST" onclick="formSubmit('{{user['_id']}}')">
                 <input type="hidden" name="id" value="{{user['_id']}}" />
+                <input type="hidden" name="access-token" value="{{access_token}}" />
                 <div class="card-image">
                     <figure class="image is-4by3">
                         <img src="{{user['image_path']}}" alt="Placeholder image" />
