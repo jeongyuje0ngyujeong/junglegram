@@ -1,26 +1,27 @@
-from flask import Flask, jsonify, render_template, request
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask import Flask, jsonify, render_template, request, redirect, make_response, url_for
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required as jwt_required_extended, get_jwt_identity
 from pymongo import MongoClient
 from flask_bcrypt import Bcrypt, check_password_hash
 from bson import ObjectId
 from flask.json.provider import JSONProvider
-
+from functools import wraps
+import certifi
+import json
+import jwt
+import time
+#from datetime import datetime, timedelta
 
 app = Flask(__name__)
-import certifi
 
-import json
-import sys
 
 
 ca = certifi.where()
 
-
-# client = MongoClient('mongodb://ben:kakao1369!@15.164.217.10/?authSource=admin', 27017)
 client = MongoClient(host='localhost', port=27017)
-
 db = client.junglegram
 bcrypt = Bcrypt(app)
+app.config['SECRET_KEY'] = 'junglegram_secret_key'
+
 #####################################################################################
 # 이 부분은 코드를 건드리지 말고 그냥 두세요. 코드를 이해하지 못해도 상관없는 부분입니다.
 #
@@ -32,7 +33,6 @@ class CustomJSONEncoder(json.JSONEncoder):
         if isinstance(o, ObjectId):
             return str(o)
         return json.JSONEncoder.default(self, o)
-
 
 class CustomJSONProvider(JSONProvider):
     def dumps(self, obj, **kwargs):
@@ -48,21 +48,33 @@ app.json = CustomJSONProvider(app)
 # 여기까지 이해 못해도 그냥 넘어갈 코드입니다.
 # #####################################################################################
 
-## HTML을 주는 부분
+
 @app.route('/')
-def home():
-   return render_template('login.html/')
+def login():
+    return render_template('login.html')
 
-@app.route('/user', methods=['POST'])
-def show_user():
-    id = request.form['id']
-    user = db.users.find_one({'_id': ObjectId(id)})
-    return render_template('user_page.html/', user=user)
-    
+@app.route('/main', methods=['POST'])
+def main():
+    access_token = request.form['access-token']
+    payload = jwt.decode(access_token.split()[1], app.config['SECRET_KEY'], algorithms=['HS256'])
+    return payload
 
-@app.route('/insert', methods=['POST'])
+@app.route('/user/register', methods=['POST']) 
+def register() : 
+    id_receive = request.form['id_give']
+    pw_receive = request.form['pw_give']
+    pw_hash = bcrypt.generate_password_hash(pw_receive).decode('utf-8')
+    if db.accounts.count_documents({'id': id_receive}) == 0:
+        db.accounts.insert_one({'id': id_receive, 'password': pw_hash})
+        _id = db.accounts.find_one({'id': id_receive})['_id']
+        return jsonify({'result': 'success', 'message': 'register success', '_id': _id})
+    else:
+        return jsonify({'result': 'failure', 'message': 'id already exists'})
+
+@app.route('/users/insert', methods=['POST'])
 def insert():
     result = request.form
+    _id = result['_id']
     name = result['name']
     age = result['age']
     mbti = result['mbti']
@@ -70,6 +82,7 @@ def insert():
     rgb = result['rgb']
     content = result['content']
     doc = {
+        '_id': ObjectId(_id),
         'name': name,
         'age': age,
         'mbti': mbti,
@@ -78,39 +91,36 @@ def insert():
         'content': content
     }
     db.users.insert_one(doc)
-   
     return jsonify({'result': 'success'})
 
-@app.route('/edit', methods=['POST'])
-def edit():
-    result = request.form
-    id= result['id']
-    name = result['name']
-    age = result['age']
-    mbti = result['mbti']
-    hobby = result['hobby']
-    rgb = result['rgb']
-    content = result['content']
-    
-    db.users.update_one({'_id': ObjectId(id)}, {'$set': {'name': name, 'age': age, 'mbti': mbti, 'hobby': hobby, 'rgb': rgb, 'content': content}})
+@app.route('/user/login', methods=['POST']) 
+def user_login() : 
+    id = request.form['id']
+    pw = request.form['pw']
+    account = db.accounts.find_one({'id': id})
    
-    return jsonify({'result': 'success'})
+    if account:
+        if check_password_hash(account['password'], pw):
+            payload = {
+                'id': id,
+                #'pw' : account['password'],
+                #만료기한 24시간
+                'exp': time.time() + 86400
+            }
+            
+            token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+        
+            #token 변수명 변경: token > access-token
+            return jsonify({'result': 'success', 'access-token': token})
+        
+        else:
+            return jsonify({'result': 'failure', 'message': 'pw doesnt exists'})
+    else :
+        return jsonify({'result': 'failure', 'message': 'id doesnt exists'})
 
-@app.route('/users/register', methods=['POST']) 
-def register() : 
-    id_receive = request.form['id_give']
-    pw_receive = request.form['pw_give']
-    pw_hash = bcrypt.generate_password_hash(pw_receive).decode('utf-8')
 
-    if db.accounts.count_documents({'id': id_receive}) == 0:
-        db.accounts.insert_one({'id': id_receive, 'password': pw_hash})
-        _id = db.accounts.find_one({'id': id_receive})['_id']
-        return jsonify({'result': 'success', 'message': 'register success', '_id': _id})
-    else:
-        return jsonify({'result': 'failure', 'message': 'id already exists'})
-    
 
-@app.route('/users/check_id', methods=['GET']) 
+@app.route('/user/check_id', methods=['GET']) 
 def check_id() : 
     id_receive = request.args.get('id_give')
 
@@ -119,18 +129,12 @@ def check_id() :
     else:
         return jsonify({'result': 'failure', 'message': 'id already exists'})
 
-@app.route('/users/login', methods=['GET']) 
-def login() : 
-    id = request.args.get('id')
-    pw = request.args.get('pw')
-    account = db.accounts.find_one({'id': id})
-    if account:
-        if check_password_hash(account['password'], pw):
-            return jsonify({'result': 'success', 'message': 'login success'})
-        else:
-            return jsonify({'result': 'failure', 'message': 'id or pw doesnt exists'})
-    else :
-        return jsonify({'result': 'failure', 'message': 'id or pw doesnt exists'})
+@app.route('/check_token', methods=['GET'])
+def check_token():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return redirect('/login')
+    return jsonify({'result': 'success'}) 
 
 
 
