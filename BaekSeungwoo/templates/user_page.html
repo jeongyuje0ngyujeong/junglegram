@@ -22,7 +22,7 @@
 
     <style>
       .card {
-        max-width: 1200px;
+        max-width: 1000px;
         margin: 0 auto;
       }
 
@@ -47,9 +47,58 @@
         height: 150px;
         margin: auto;
       }
+
+      .home-button {
+        color: #000000;
+        cursor: pointer;
+        transition: transform 0.3s ease, color 0.3s ease;
+
+        font-size: 2.5rem;
+      }
+
+      .home-button:hover {
+        transform: scale(1.1);
+        color: #727272;
+      }
     </style>
     <script>
       
+      function myPageSubmit() {
+                const token = sessionStorage.getItem('access-token');
+                const myForm = $('#toMypage');
+                const hidden = $('#mypageHidden').val();
+
+                myForm.submit();
+            }
+
+      function comment_submit(){
+        const comment = $('#comment_text').val();
+        const user_id = $('#user_id_hidden').val();
+        const token = sessionStorage.getItem('access-token');
+
+        $.ajax({
+        type: 'POST',
+        url: '/user/comment',
+        data: {
+          user_id: user_id,
+          comment: comment,
+          token: token
+        },
+        success: function (response) {
+          if (response.result === 'success') {
+            alert('회원가입이 완료되었습니다.');
+            myPageSubmit();
+          } else {
+            alert('ID 중복 미확인');
+          }
+        },
+        error: function () {
+          alert('서버 오류!');
+        },
+      });
+
+      }
+
       function logout() {
                 sessionStorage.removeItem('access-token');
                 window.location.href = '/';
@@ -119,8 +168,68 @@
        
         <i onclick="mainSubmit()" class="fa-solid fa-house" style="font-size: 40px;"></i>
     </div>
+
+    <section class="section">
+      <div class="container">
+        <div class="card">
+          <div class="card-content">
+
+            <!-- 기존 댓글 목록 -->
+            {% for comment in comments %}
+            <article class="media">
+              <figure class="media-left">
+                <p class="image is-48x48">
+                  <img src="{{comment['pic']}}" alt="댓글 작성자 아바타">
+                </p>
+              </figure>
+              <div class="media-content">
+                <div class="content">
+                  <p>
+                    <strong>{{comment['name']}}</strong>
+                    <br>
+                    {{comment['comment']}}
+                    <br>
+                    <small></small>
+                  </p>
+                </div>
+              </div>
+            </article>
+            {% endfor %}
+
+            <!-- 댓글 작성 폼 -->
+            <article class="media">
+              <figure class="media-left">
+                <p class="image is-64x64">
+                  <img src="{{pic}}" alt="사용자 아바타">
+                </p>
+              </figure>
+              <div class="media-content">
+                <div class="field">
+                  <p class="control">
+                    <textarea id="comment_text" class="textarea" placeholder="댓글을 작성하세요..."></textarea>
+                  </p>
+                </div>
+                <nav class="level">
+                  <div class="level-left">
+                    <div class="level-item">
+                      <a onclick="comment_submit()" class="button is-info">댓글 작성</a>
+                    </div>
+                  </div>
+                </nav>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <input type="hidden"  id="user_id_hidden" value="{{user['_id']}}">
+    
     <form id="toMain" action="main" method="POST" style="display: none;">
       <input type="hidden" name="access-token" id="formHidden">
+    </form>
+    <form id="toMypage" action="user" method="POST" style="display: none">
+        <input type="hidden" name="id" id="mypageHidden" value="{{user['_id']}}"/>
     </form>
   </body>
 </html>
