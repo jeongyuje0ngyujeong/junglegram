@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>프로필 페이지</title>
+        <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+        <!-- Bluma CSS library -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+        <!-- Icon font library -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+        <style>
+            .card {
+                max-width: 1000px;
+                margin: 0 auto;
+            }
+
+            .favorite-color-gradient {
+                background: linear-gradient(to left, {{user[ 'rgb']}}, #ffffff);
+                margin-top: 1rem;
+                border-radius: 4px;
+            }
+
+            .card-footer-item {
+                color: #3273dc;
+            }
+
+            .logout-button {
+                color: #ff3860;
+                transition: all 0.3s ease;
+            }
+
+            .logout-button:hover {
+                background-color: #ff3860;
+                color: white;
+            }
+            .profile-settings {
+                color: #3273dc;
+                transition: all 0.3s ease;
+            }
+
+            .profile-settings:hover {
+                background-color: #3273dc;
+                color: white;
+            }
+
+            .fixed-buttons {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 100;
+            }
+            .icon.is-large i {
+                font-size: 2.5rem;
+            }
+            .cardsize {
+                width: 250px;
+                height: 150px;
+                margin: auto;
+            }
+            .home-button {
+                color: #000000;
+                cursor: pointer;
+                transition: transform 0.3s ease, color 0.3s ease;
+
+                font-size: 2.5rem;
+            }
+            .wrap {
+                width: 500px;
+                margin: auto;
+            }
+
+            .titlegram {
+                width: 500px;
+                height: 200px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            #register-box {
+                width: 800px;
+                margin: auto;
+                padding: 5px;
+
+                border-radius: 5px;
+            }
+        </style>
+
+        <script>
+            $(document).ready(function () {
+                $('#name').val("{{user['name']}}");
+                $('#age').val("{{user['age']}}");
+                $('#mbti').val("{{user['mbti']}}");
+                $('#hobby').val("{{user['hobby']}}");
+                $('#content').val("{{user['content']}}");
+                $('#color').val("{{user['color']}}");
+            });
+
+            function editMode() {
+                $('#info-section').hide();
+                $('#edit-section').show();
+            }
+
+            function myPageSubmit() {
+                const token = sessionStorage.getItem('access-token');
+                const myForm = $('#toMypage');
+                const hidden = $('#mypageHidden').val(token);
+
+                myForm.submit();
+            }
+            function edit() {
+                const token = sessionStorage.getItem('access-token');
+                var formData = new FormData();
+                formData.append('token', token);
+                formData.append('name', $('#name').val());
+                formData.append('age', $('#birth').val());
+                formData.append('mbti', $('#mbti').val());
+                formData.append('hobby', $('#hobby').val());
+                formData.append('rgb', $('#color').val());
+                formData.append('content', $('#selfcomment').val());
+                formData.append('pic', $('#pic')[0].files[0]);
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/user/edit',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.result === 'success') {
+                            alert('ㅇㅇ');
+                        } else {
+                            alert('ID 없다');
+                        }
+                        myPageSubmit();
+                    },
+                    error: function () {
+                        alert('서버 오류!');
+                    },
+                });
+            }
+
+            function mainSubmit() {
+                const token = sessionStorage.getItem('access-token');
+                const myForm = $('#toMain');
+                const hidden = $('#formHidden').val(token);
+
+                myForm.submit();
+            }
+
+            function logout() {
+                sessionStorage.removeItem('access-token');
+                window.location.href = '/';
+            }
+        </script>
+    </head>
+    <body>
+        <section class="section" id="info-section">
+            <div class="container">
+                <div class="card">
+                    <div class="card-content">
+                        <div class="favorite-color-gradient" style="width: 900px; margin: auto; padding: 20px">
+                            <div class="media">
+                                <div class="media-left">
+                                    <figure class="image is-128x128">
+                                        <img src="{{user['image_path']}}" alt="프로필 사진" class="is-rounded" />
+                                    </figure>
+                                </div>
+                                <div class="media-content">
+                                    <p class="title is-4">{{user['name']}}</p>
+                                    <div class="content">
+                                        <p><strong>생년월일:</strong> {{user['age']}}</p>
+                                        <p><strong>MBTI:</strong> {{user['mbti']}}</p>
+                                        <p><strong>취미:</strong> {{user['hobby']}}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="favorite-color-gradient"></div>
+                        <div class="content mt-4">
+                            <h4 class="title is-5">자기소개</h4>
+                            <p>{{user['content']}}</p>
+                        </div>
+                    </div>
+                    <footer class="card-footer">
+                        <a onclick="editMode()" href="#" class="card-footer-item profile-settings">프로필 설정</a>
+                        <a href="#" onclick="logout()" class="card-footer-item logout-button">로그아웃</a>
+                    </footer>
+                </div>
+            </div>
+
+            <!-- 홈버튼 -->
+
+            <a onclick="mainSubmit()" href="#" class="icon is-large fixed-buttons home-button">
+                <i class="fas fa-home"></i>
+            </a>
+        </section>
+
+        <div class="wrap" id="edit-section" style="display: none">
+            <section class="section">
+                <div class="container">
+                    <h1 class="title is-3">나를 소개해주세요!</h1>
+                    <div class="box">
+                        <div class="field">
+                            <label class="label" for="name">이름</label>
+                            <div class="control">
+                                <input class="input" type="text" id="name" value="{{user['name']}}" />
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label" for="birth">생일</label>
+                            <div class="control"><input class="input" type="date" id="birth" value="{{user['age']}}" /></div>
+                        </div>
+                        <div class="field">
+                            <label class="label" for="mbti">MBTI</label>
+                            <div class="control"><input class="input" type="text" id="mbti" value="{{user['mbti']}}" /></div>
+                        </div>
+                        <div class="field">
+                            <label class="label" for="hobby">취미</label>
+                            <div class="control">
+                                <input class="input" type="text" id="hobby" value="{{user['hobby']}}" />
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label" for="pic">사진</label>
+                            <div class="control">
+                                <input class="input" type="file" id="pic" />
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label" for="color">좋아하는 색</label>
+                            <div class="control">
+                                <input class="input" type="color" id="color" name="1" value="{{user['rgb']}}" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="selfcomment">자기소개</label>
+                            <div class="control">
+                                <textarea class="textarea" id="selfcomment" rows="3">{{user['content']}}</textarea>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <button onclick="edit()" id="insert_button" class="button is-primary">입력하기</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <form id="toMain" action="main" method="POST" style="display: none">
+            <input type="hidden" name="access-token" id="formHidden" />
+        </form>
+        <form id="toMypage" action="mypage" method="POST" style="display: none">
+            <input type="hidden" name="access-token" id="mypageHidden" />
+        </form>
+    </body>
+</html>
