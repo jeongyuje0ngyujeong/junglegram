@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    />
+    <!-- JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <title>로그인 페이지</title>
+    <!-- Bulma CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    />
+    <!-- Font Awesome icons -->
+    <script
+      defer
+      src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"
+    ></script>
+
+    <style>
+      .hero.is-primary {
+        background: linear-gradient(to right, #10c22d, #33b90a);
+      }
+    </style>
+
+    <script>
+      $(document).ready(function () {
+        $("#regibutton").click(function () {
+          $("#Register-box").toggle();
+        });
+      });
+
+      function signup() {
+        $.ajax({
+          type: "POST",
+          url: "/users/register",
+          data: {
+            id_give: $("#register-id").val(),
+            pw_give: $("#register-password").val(),
+          },
+          success: function (response) {
+            if (response.result === "success") {
+              alert("회원가입이 완료되었습니다.");
+              insertMode(response._id);
+            } else {
+              alert("ID 중복 미확인");
+            }
+          },
+          error: function () {
+            alert("서버 오류!");
+          },
+        });
+      }
+
+      function checkId() {
+        $.ajax({
+          type: "GET",
+          url: "/users/check_id",
+          data: { id_give: $("#register-id").val() },
+          success: function (response) {
+            if (response.result === "success") {
+              alert("사용 가능한 ID입니다.");
+            } else {
+              alert("이미 사용 중인 ID입니다.");
+            }
+          },
+          error: function () {
+            alert("서버 오류!");
+          },
+        });
+      }
+
+      function login() {
+        $.ajax({
+          type: "GET",
+          url: "/users/login",
+          data: { id: $("#login-id").val(), pw: $("#login-password").val() },
+          success: function (response) {
+            if (response.result === "success") {
+              alert(response.message);
+            } else {
+              alert("ID 없다");
+            }
+          },
+          error: function () {
+            alert("서버 오류!");
+          },
+        });
+      }
+
+      function insertMode(_id) {
+        $("#main-section").hide();
+        $("#insert-section").show();
+        $("#insert-button").on("click", function () {
+          insert(_id);
+        });
+      }
+
+      function insert(_id) {
+        $.ajax({
+          type: "POST",
+          url: "/insert",
+          data: {
+            _id_give: _id,
+            name_give: $("#name").val(),
+            birth_give: $("#birth").val(),
+            mbti_give: $("#mbti").val(),
+            hobby_give: $("#hobby").val(),
+            color_give: $("#color").val(),
+            comment_give: $("#selfcomment").val(),
+          },
+          success: function (response) {
+            if (response.result === "success") {
+              alert("정보 기입이 완료되었습니다.");
+              console.log(response._id);
+            } else {
+              alert("계정이 없습니다(_id)");
+            }
+          },
+          error: function () {
+            alert("서버 오류!");
+          },
+        });
+      }
+    </script>
+  </head>
+
+  <body>
+    <section
+      class="hero is-primary is-bold"
+      style="max-width: 700px; margin: auto; border-radius: 30px"
+    >
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title" style="font-size: 60px">정글 그램</h1>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="main-section">
+      <div class="container">
+        <div class="columns">
+          <div class="column is-half is-offset-one-quarter">
+            <div class="box">
+              <h3 class="title is-4">로그인</h3>
+              <div class="field">
+                <label class="label">아이디</label>
+                <div class="control has-icons-left">
+                  <input
+                    id="login-id"
+                    class="input"
+                    type="text"
+                    placeholder="아이디를 입력하세요"
+                  />
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-user"></i>
+                  </span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label">비밀번호</label>
+                <div class="control has-icons-left">
+                  <input
+                    id="login-password"
+                    class="input"
+                    type="password"
+                    placeholder="비밀번호를 입력하세요"
+                  />
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-lock"></i>
+                  </span>
+                </div>
+              </div>
+
+              <div class="field is-grouped">
+                <div class="control">
+                  <button class="button is-primary" onclick="login()">
+                    로그인
+                  </button>
+                </div>
+                <div class="control">
+                  <button class="button is-link is-light" id="regibutton">
+                    회원가입
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="Register-box" class="box" style="display: none">
+              <h3 class="title is-4">회원가입</h3>
+              <div class="field">
+                <label class="label">아이디</label>
+                <div class="control has-icons-left">
+                  <input
+                    id="register-id"
+                    class="input"
+                    type="text"
+                    placeholder="아이디를 입력하세요"
+                  />
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-user"></i>
+                  </span>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="control">
+                  <button
+                    class="button is-info is-outlined"
+                    onclick="checkId()"
+                    id="check-id-button"
+                  >
+                    중복확인
+                  </button>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label">비밀번호</label>
+                <div class="control has-icons-left">
+                  <input
+                    id="register-password"
+                    class="input"
+                    type="password"
+                    placeholder="비밀번호를 입력하세요"
+                  />
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-lock"></i>
+                  </span>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="control">
+                  <button class="button is-primary"onclick="signup()">가입</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="insert-section" style="display: none; width: 600px; margin: auto;">
+        <section class="section">
+          <div class="container">
+            <h1 class="title is-3" style="text-align: center;">나를 소개해주세요!</h1>
+            <div class="box">
+              <div class="field">
+                <label class="label" for="name">이름</label>
+                <div class="control">
+                  <input class="input" type="text" id="name" />
+                </div>
+              </div>
+              <div class="field">
+                <label class="label" for="birth">생일</label>
+                <div class="control">
+                  <input class="input" type="date" id="birth" />
+                </div>
+              </div>
+              <div class="field">
+                <label class="label" for="mbti">MBTI</label>
+                <div class="control">
+                  <input class="input" type="text" id="mbti" />
+                </div>
+              </div>
+              <div class="field">
+                  <label class="label" for="hobby">취미</label>
+                  <div class="control">
+                      <input class="input" type="text" id="hobby" />
+                  </div>
+              </div>
+              <div class="field">
+                <label class="label" for="pic">사진</label>
+                <div class="control">
+                  <input class="input" type="file" id="pic" />
+                </div>
+              </div>
+              <div class="field">
+                <label class="label" for="color">좋아하는 색</label>
+                <div class="control">
+                  <input class="input" type="color" id="color" />
+                </div>
+              </div>
+  
+              <div class="field">
+                <label class="label" for="selfcomment">자기소개</label>
+                <div class="control">
+                  <textarea class="textarea" id="selfcomment" rows="3"></textarea>
+                </div>
+              </div>
+              <div class="field">
+                <div class="control">
+                  <button class="button is-primary" id="insert-button">입력하기</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      
+  </body>
+</html>
