@@ -1,142 +1,372 @@
-from flask import Flask, jsonify, render_template, request, redirect, make_response, url_for
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required as jwt_required_extended, get_jwt_identity
-from pymongo import MongoClient
-from flask_bcrypt import Bcrypt, check_password_hash
-from bson import ObjectId
-from flask.json.provider import JSONProvider
-from functools import wraps
-import certifi
-import json
-import jwt
-import time
-#from datetime import datetime, timedelta
+<!DOCTYPE html>
 
-app = Flask(__name__)
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+  />
+  <!-- JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 
-ca = certifi.where()
+  <script>
+    src = 'https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js';
+    crossorigin = 'anonymous';
+  </script>
 
-client = MongoClient(host='localhost', port=27017)
-db = client.junglegram
-bcrypt = Bcrypt(app)
-app.config['SECRET_KEY'] = 'junglegram_secret_key'
+ <title>정글그램 | 로그인 페이지</title>
 
-#####################################################################################
-# 이 부분은 코드를 건드리지 말고 그냥 두세요. 코드를 이해하지 못해도 상관없는 부분입니다.
-#
-# ObjectId 타입으로 되어있는 _id 필드는 Flask 의 jsonify 호출시 문제가 된다.
-# 이를 처리하기 위해서 기본 JsonEncoder 가 아닌 custom encoder 를 사용한다.
-# Custom encoder 는 다른 부분은 모두 기본 encoder 에 동작을 위임하고 ObjectId 타입만 직접 처리한다.
-class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, ObjectId):
-            return str(o)
-        return json.JSONEncoder.default(self, o)
-
-class CustomJSONProvider(JSONProvider):
-    def dumps(self, obj, **kwargs):
-        return json.dumps(obj, **kwargs, cls=CustomJSONEncoder)
-
-    def loads(self, s, **kwargs):
-        return json.loads(s, **kwargs)
-
-
-# 위에 정의되 custom encoder 를 사용하게끔 설정한다.
-app.json = CustomJSONProvider(app)
-
-# 여기까지 이해 못해도 그냥 넘어갈 코드입니다.
-# #####################################################################################
-
-
-@app.route('/')
-def login():
-    return render_template('login.html')
-
-@app.route('/main', methods=['POST'])
-def main():
-    access_token = request.form['access-token']
-    payload = jwt.decode(access_token.split()[1], app.config['SECRET_KEY'], algorithms=['HS256'])
-    return payload
-
-@app.route('/user/register', methods=['POST']) 
-def register() : 
-    id_receive = request.form['id_give']
-    pw_receive = request.form['pw_give']
-    pw_hash = bcrypt.generate_password_hash(pw_receive).decode('utf-8')
-    if db.accounts.count_documents({'id': id_receive}) == 0:
-        db.accounts.insert_one({'id': id_receive, 'password': pw_hash})
-        _id = db.accounts.find_one({'id': id_receive})['_id']
-        return jsonify({'result': 'success', 'message': 'register success', '_id': _id})
-    else:
-        return jsonify({'result': 'failure', 'message': 'id already exists'})
-
-@app.route('/users/insert', methods=['POST'])
-def insert():
-    result = request.form
-    _id = result['_id']
-    name = result['name']
-    age = result['age']
-    mbti = result['mbti']
-    hobby = result['hobby']
-    rgb = result['rgb']
-    content = result['content']
-    doc = {
-        '_id': ObjectId(_id),
-        'name': name,
-        'age': age,
-        'mbti': mbti,
-        'hobby': hobby,
-        'rgb': rgb,
-        'content': content
+  <!-- style -->
+  <style type="text/css">
+    * {
+      font-family: "Stylish", sans-serif;
     }
-    db.users.insert_one(doc)
-    return jsonify({'result': 'success'})
 
-@app.route('/user/login', methods=['POST']) 
-def user_login() : 
-    id = request.form['id']
-    pw = request.form['pw']
-    account = db.accounts.find_one({'id': id})
-   
-    if account:
-        if check_password_hash(account['password'], pw):
-            payload = {
-                'id': id,
-                #'pw' : account['password'],
-                #만료기한 24시간
-                'exp': time.time() + 86400
+    .wrap {
+      width: 500px;
+      margin: auto;
+    }
+
+    .titlegram {
+      width: 500px;
+      height: 200px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #register-box {
+      width: 800px;
+      margin: auto;
+      padding: 5px;
+
+      border-radius: 5px;
+    }
+  </style>
+  <script>
+     function formSubmit() {
+        const token = sessionStorage.getItem('access-token');
+        const myForm = $('#toMain');
+        const hidden = $('#formHidden').val(token);
+
+        myForm.submit();
+    }
+
+    $(document).ready(function () {
+      $("#regibutton").click(function () {
+          $("#register-box").toggle();
+        });
+
+      const token = sessionStorage.getItem('access-token');
+      if (token) {
+        $.ajax({
+          type: "GET",
+          url: "/check_token",
+          headers: {
+            'Authorization': 'Bearer ' + token
+          },
+          success: function (response) {
+            console.log('토큰 유효성 검사 응답:', response);
+            if (response.result === 'success') { 
+              formSubmit();
+
             }
-            
-            token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
-        
-            #token 변수명 변경: token > access-token
-            return jsonify({'result': 'success', 'access-token': token})
-        
-        else:
-            return jsonify({'result': 'failure', 'message': 'pw doesnt exists'})
-    else :
-        return jsonify({'result': 'failure', 'message': 'id doesnt exists'})
+          },
+          error: function () {
+            alert('유효하지 않는 토큰 입니다.')
+            console.log("토큰 유효성 검사 실패:", error); 
+          }
+        });
+      } else {
+        console.log('토큰이 없습니다');
+      }
+    });
 
+    
+    function signup() {
+      $.ajax({
+        type: 'POST',
+        url: '/user/register',
+        data: {
+          id_give: $('#register-id').val(),
+          pw_give: $('#register-password').val(),
+        },
+        success: function (response) {
+          if (response.result === 'success') {
+            alert('회원가입이 완료되었습니다.');
+            insertMode(response._id);
+          } else {
+            alert('ID 중복 미확인');
+          }
+        },
+        error: function () {
+          alert('서버 오류!');
+        },
+      });
+    }
+    //route 변경: /users > /user
+    function checkId() {
+      $.ajax({
+        type: 'GET',
+        url: '/user/check_id',
+        data: { id_give: $('#register-id').val() },
+        success: function (response) {
+          if (response.result === 'success') {
+            alert('사용 가능한 ID입니다.');
+          } else {
+            alert('이미 사용 중인 ID입니다.');
+          }
+        },
+        error: function () {
+          alert('서버 오류!');
+        },
+      });
+    }
+    //route 변경: /users > /user
+    function login() {
+      $.ajax({
+        type: 'POST',
+        url: '/user/login',
+        data: {
+          id: $('#login-id').val(),
+          pw: $('#login-password').val()
+        },
+        success: function (response) {
+          if (response.result === 'success') {
+            alert('로그인 성공!');
+            //token 변수명 수정: token > access-token
+            sessionStorage.setItem('access-token', response['access-token']);
+            window.location.href = '/';
 
+          } else {
+            alert('아이디 또는 비밀번호를 잘못 입력했습니다.');
+          }
+        },
+        error: function () {
+          alert('서버 오류!');
+        },
+      });
+    }
 
-@app.route('/user/check_id', methods=['GET']) 
-def check_id() : 
-    id_receive = request.args.get('id_give')
+    function insertMode(_id) {
+        $("#main-section").hide();
+        $("#insert-section").show();
+        $("#insert-button").on("click", function () {
+          insert(_id);
+        });
+      }
 
-    if db.accounts.count_documents({'id': id_receive}) == 0:
-        return jsonify({'result': 'success', 'message': 'usable id'})
-    else:
-        return jsonify({'result': 'failure', 'message': 'id already exists'})
+    function insert(_id) {
+        console.log(_id)
+        $.ajax({
+          type: "POST",
+          url: "/users/insert",
+          data: {
+            _id: _id,
+            name: $("#name").val(),
+            age: $("#birth").val(),
+            mbti: $("#mbti").val(),
+            hobby: $("#hobby").val(),
+            rgb: $("#color").val(),
+            content: $("#selfcomment").val(),
+          },
+          success: function (response) {
+            if (response.result === "success") {
+              alert("정보 기입이 완료되었습니다.");
+              console.log(response._id);
+              window.location.href='/'
+            } else {
+              alert("계정이 없습니다(_id)");
+            }
+          },
+          error: function () {
+            alert("서버 오류!");
+          },
+        });
+      }
+  </script>
+</head>
 
-@app.route('/check_token', methods=['GET'])
-def check_token():
-    access_token = request.headers.get('Authorization')
-    if not access_token:
-        return redirect('/login')
-    return jsonify({'result': 'success'}) 
+<body>
+  <div id="main-section">
+    <div class="wrap">
+      <div class="titlegram">
+        <p style="font-weight: bold; font-size: 5em; text-align: center">
+          정글 그램
+        </p>
+      </div>
 
+      <!-- 계정 입력부분 (로그인) -->
 
+      <!-- id/pw 입력 -->
 
-if __name__ == '__main__':
-   app.run('0.0.0.0',port=5000,debug=True)
+      <div class="field" style="margin-bottom: 50px">
+        <div class="control">
+          <input
+            id="login-id"
+            class="input"
+            placeholder="아이디을 입력하세요"
+          />
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom: 50px">
+        <div class="control">
+          <input
+            id="login-password"
+            class="input"
+            type="password"
+            placeholder="비밀번호를 입력하세요"
+          />
+        </div>
+      </div>
+
+      <div class="field is-grouped">
+        <div class="control">
+          <button onclick="login()" class="button is-link">로그인</button>
+        </div>
+        <div class="control">
+          <button class="button is-text" id="regibutton">
+            회원가입
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 회원가입란 -->
+    <div id="register-box" style="display: none">
+      <hr class="mt-5 mb-5" />
+      <div class="box">
+        <h2 class="title is-4 has-text-centered mb-5">회원가입</h2>
+
+        <!-- 아이디 -->
+        <div class="field is-horizontal">
+          <label class="label field-label is-normal">아이디</label>
+          <div class="field-body">
+            <div class="field is-grouped">
+              <div class="control is-expanded has-icons-left has-icons-right">
+                <input
+                  id="register-id"
+                  class="input"
+                  placeholder="아이디를 입력하세요"
+                />
+                <span class="icon is-small is-left">
+                  <i class="fas fa-envelope"></i>
+                </span>
+              </div>
+              <div class="control">
+                <button
+                  onclick="checkId()"
+                  class="button is-info is-outlined"
+                  id="check-id-button"
+                >
+                  중복확인
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 비밀번호 -->
+        <div class="field is-horizontal">
+          <label class="label field-label is-normal">비밀번호</label>
+          <div class="field-body">
+            <div class="control has-icons-left">
+              <input
+                id="register-password"
+                class="input"
+                type="password"
+                placeholder="비밀번호를 입력하세요"
+              />
+              <span class="icon is-small is-left">
+                <i class="fas fa-lock"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 가입버튼 -->
+        <div class="field">
+          <div class="control">
+            <button
+              onclick="signup()"
+              class="button is-primary is-fullwidth"
+              id="register-button"
+            >
+              가입
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" id="insert-section" style="display: none">
+    <section class="section">
+      <div class="container">
+        <h1 class="title is-3">나를 소개해주세요!</h1>
+        <div class="box">
+          <div class="field">
+            <label class="label" for="name">이름</label>
+            <div class="control">
+              <input class="input" type="text" id="name" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="birth">생일</label>
+            <div class="control">
+              <input class="input" type="date" id="birth" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="mbti">MBTI</label>
+            <div class="control">
+              <input class="input" type="text" id="mbti" />
+            </div>
+          </div>
+          <div class="field">
+              <label class="label" for="hobby">취미</label>
+              <div class="control">
+                  <input class="input" type="text" id="hobby" />
+              </div>
+          </div>
+          <div class="field">
+            <label class="label" for="pic">사진</label>
+            <div class="control">
+              <input class="input" type="file" id="pic" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="color">좋아하는 색</label>
+            <div class="control">
+              <input class="input" type="color" id="color" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="selfcomment">자기소개</label>
+            <div class="control">
+              <textarea class="textarea" id="selfcomment" rows="3"></textarea>
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
+              <button class="button is-primary" id="insert-button">입력하기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <form id="toMain" action="main" method="POST" onclick="formSubmit()" style="display: none;">
+    <input type="hidden" name="access-token" id="formHidden">
+  </form>
+</body>
+</html>
+
+</html>
