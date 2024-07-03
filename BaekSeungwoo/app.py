@@ -65,22 +65,27 @@ def main():
         if str(temp[i]['_id']) != _id:
             users.append(temp[i])
 
-    return render_template('main.html', users=users)
+    return render_template('main.html', users=users, access_token=access_token)
 
 @app.route('/user', methods=['POST'])
 def user_page():
+    access_token = request.form['access-token']
+    print(access_token)
+    _id = jwt.decode(access_token, app.config['SECRET_KEY'], algorithms=['HS256'])['_id']
+    pic = db.users.find_one({"_id":ObjectId(_id)})['image_path']
     id = request.form["id"]
     user = db.users.find_one({"_id":ObjectId(id)})
-    return render_template('user_page.html', user=user)
+    comments = list(db.comments.find({'user_id': id}))
+
+    return render_template('user_page.html', user=user, comments=comments, pic=pic)
 
 @app.route('/mypage', methods=['POST'])
 def my_page():
     access_token = request.form['access-token']
     id = jwt.decode(access_token, app.config['SECRET_KEY'], algorithms=['HS256'])['_id']
-    print(id)
     user = db.users.find_one({"_id":ObjectId(id)})
-    print(user)
-    return render_template('my_page.html', user=user)
+    comments = list(db.comments.find({'user_id': id}))
+    return render_template('my_page.html', user=user, comments=comments)
 
 @app.route('/user/register', methods=['POST']) 
 def register() : 
@@ -177,6 +182,23 @@ def check_id() :
         return jsonify({'result': 'success', 'message': 'usable id'})
     else:
         return jsonify({'result': 'failure', 'message': 'id already exists'})
+
+@app.route('/user/comment', methods=['POST'])
+def comment():
+    user_id = request.form['user_id']
+    comment = request.form['comment']
+    token = request.form['token']
+    _id = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])['_id']
+    commenter = db.users.find_one({"_id":ObjectId(_id)})
+    doc = {
+        'user_id': user_id,
+        'comment': comment,
+        'pic': commenter['image_path'],
+        'name': commenter['name'],
+    }
+    db.comments.insert_one(doc)
+    return jsonify({'result': 'success'}) 
+
 
 @app.route('/check_token', methods=['GET'])
 def check_token():
