@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>고정 버튼 예제 - Bulma CSS</title>
+
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+        <!-- Bluma CSS library -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+        <!-- Icon font library -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <style>
+            .titleh1 h1 {
+                display: flex;
+                position: relative;
+                width: 100%;
+                height: 300px;
+                margin: auto;
+                justify-content: center;
+                align-items: center;
+                font-weight: bold;
+                text-align: center;
+                font-size: 100px;
+                z-index: 1;
+            }
+
+            .instagram-logo {
+                position: absolute;
+                bottom: 20px;
+                right: 20px;
+                font-size: 50px;
+                color: white;
+            }
+
+            .fixed-buttons {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 100;
+                display: flex;
+                align-items: center;
+            }
+
+            .card-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1rem;
+                padding: 2rem;
+                justify-content: center;
+            }
+
+            .card {
+                flex: 0 0 250px;
+                margin-bottom: 1rem;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transition: transform 0.2s;
+            }
+
+            .card:hover {
+                transform: translateY(-40px);
+            }
+
+            #toMypage {
+                margin-left: 10px;
+                margin-top: 20px;
+                cursor: pointer;
+            }
+
+            .profile-icon {
+                font-size: 2.5rem;
+                color: #4a4a4a;
+                transition: transform 0.3s ease, color 0.3s ease;
+            }
+
+            .profile-icon:hover {
+                transform: scale(1.2) rotate(5deg);
+                color: #3273dc; /* Bulma의 파란색 */
+            }
+        </style>
+        <script>
+            function logout() {
+                sessionStorage.removeItem('access-token');
+                window.location.href = '/';
+            }
+
+            function formSubmit(id) {
+                const myForm = $(`#${id}`);
+                myForm.submit();
+            }
+
+            function myPageSubmit() {
+                const token = sessionStorage.getItem('access-token');
+                const myForm = $('#toMypage');
+                const hidden = $('#mypageHidden').val(token);
+
+                myForm.submit();
+            }
+        </script>
+    </head>
+
+    <body>
+        <div class="fixed-buttons">
+            <!-- 로그아웃 버튼 -->
+            <button onclick="logout()" class="button is-outlined is-danger" style="top: 10px; right: 10px">
+                <span class="icon">
+                    <i class="fas fa-sign-out-alt"></i>
+                </span>
+                <span>로그아웃</span>
+            </button>
+            <!-- 홈버튼 -->
+            <form id="toMypage" action="mypage" method="POST" onclick="myPageSubmit()" class="profile-icon">
+                <i class="fa-regular fa-user" style="font-size: 50px"></i>
+                <input type="hidden" name="access-token" id="mypageHidden" />
+            </form>
+        </div>
+
+        <div class="titleh1">
+            <h1 style="font-size: 100px; font-weight: bold">정글 그램</h1>
+        </div>
+        <hr />
+
+        <div class="card-container">
+            {% for user in users %}
+            <form class="card" id="{{user['_id']}}" action="user" method="POST" onclick="formSubmit('{{user['_id']}}')">
+                <input type="hidden" name="id" value="{{user['_id']}}" />
+                <input type="hidden" name="access-token" value="{{access_token}}" />
+                <div class="card-image">
+                    <figure class="image is-4by3">
+                        <img src="{{user['image_path']}}" alt="Placeholder image" />
+                    </figure>
+                </div>
+                <div class="card-content">
+                    <div class="content">
+                        <h4>{{user['name']}}</h4>
+                        <p>{{user['age']}}</p>
+                    </div>
+                </div>
+            </form>
+
+            {% endfor %}
+        </div>
+    </body>
+</html>
